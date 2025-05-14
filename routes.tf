@@ -1,33 +1,36 @@
-resource "aws_api_gateway_resource" "routes" {
-  for_each    = var.routes
+# /health
+resource "aws_api_gateway_resource" "health" {
+  count       = var.enable_healthcheck ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.this.id
   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
-  path_part   = each.value.path_part
+  path_part   = "health"
 }
 
-resource "aws_api_gateway_method" "route_methods" {
-  for_each      = var.routes
+resource "aws_api_gateway_method" "health_get" {
+  count         = var.enable_healthcheck ? 1 : 0
   rest_api_id   = aws_api_gateway_rest_api.this.id
-  resource_id   = aws_api_gateway_resource.routes[each.key].id
-  http_method   = each.value.method
+  resource_id   = aws_api_gateway_resource.health[0].id
+  http_method   = "GET"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "route_integrations" {
-  for_each                = var.routes
-  rest_api_id             = aws_api_gateway_rest_api.this.id
-  resource_id             = aws_api_gateway_resource.routes[each.key].id
-  http_method             = aws_api_gateway_method.route_methods[each.key].http_method
-  type                    = each.value.integration.type
-  integration_http_method = each.value.integration.integration_http_method
-  request_templates       = each.value.integration.request_templates
+resource "aws_api_gateway_integration" "health_get" {
+  count                     = var.enable_healthcheck ? 1 : 0
+  rest_api_id               = aws_api_gateway_rest_api.this.id
+  resource_id               = aws_api_gateway_resource.health[0].id
+  http_method               = aws_api_gateway_method.health_get[0].http_method
+  type                      = "MOCK"
+  integration_http_method   = "GET"
+  request_templates         = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
 }
 
-resource "aws_api_gateway_method_response" "route_responses" {
-  for_each    = var.routes
+resource "aws_api_gateway_method_response" "health_get" {
+  count       = var.enable_healthcheck ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.this.id
-  resource_id = aws_api_gateway_resource.routes[each.key].id
-  http_method = aws_api_gateway_method.route_methods[each.key].http_method
+  resource_id = aws_api_gateway_resource.health[0].id
+  http_method = aws_api_gateway_method.health_get[0].http_method
   status_code = "200"
 
   response_models = {
@@ -35,14 +38,14 @@ resource "aws_api_gateway_method_response" "route_responses" {
   }
 }
 
-resource "aws_api_gateway_integration_response" "route_integration_responses" {
-  for_each    = var.routes
+resource "aws_api_gateway_integration_response" "health_get" {
+  count       = var.enable_healthcheck ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.this.id
-  resource_id = aws_api_gateway_resource.routes[each.key].id
-  http_method = aws_api_gateway_method.route_methods[each.key].http_method
-  status_code = aws_api_gateway_method_response.route_responses[each.key].status_code
+  resource_id = aws_api_gateway_resource.health[0].id
+  http_method = aws_api_gateway_method.health_get[0].http_method
+  status_code = aws_api_gateway_method_response.health_get[0].status_code
 
   response_templates = {
-    "application/json" = each.value.integration.response_template
+    "application/json" = ""
   }
 }
