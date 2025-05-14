@@ -61,4 +61,15 @@ variable "proxy_uri" {
   default     = ""
 }
 
+variable "client_certificate_id" {
+  type        = string
+  default     = null
+  description = "Client certificate ID (se já tiver um). Se não for PRD, será ignorado."
+}
+
+variable "environment" {
+  type        = string
+  description = "Ambiente (dev, hml, prd)"
+}
+
 
